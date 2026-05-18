@@ -4,3 +4,6 @@
 [submodule "crawler-user-agents"]
 	path = crawler-user-agents
 	url = https://github.com/monperrus/crawler-user-agents.git
+[submodule "COUNTER-Robots"]
+	path = COUNTER-Robots
+	url = https://github.com/atmire/COUNTER-Robots.git

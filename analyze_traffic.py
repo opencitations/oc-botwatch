@@ -26,11 +26,15 @@ def _build_ai_pattern() -> str:
 
 def _build_generic_bot_pattern() -> str:
     with (BASE_DIR / "crawler-user-agents" / "crawler-user-agents.json").open() as f:
-        data = json.load(f)
+        crawlers = json.load(f)
+    with (BASE_DIR / "COUNTER-Robots" / "COUNTER_Robots_list.json").open() as f:
+        counter = json.load(f)
     patterns: list[str] = []
-    for entry in data:
+    for entry in crawlers:
         if "tags" in entry and "ai-crawler" in entry["tags"]:
             continue
+        patterns.append(entry["pattern"])
+    for entry in counter:
         patterns.append(entry["pattern"])
     return "(?i)" + "|".join(patterns)
 

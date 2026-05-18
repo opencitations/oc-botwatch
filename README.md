@@ -6,22 +6,7 @@ It reads monthly CSV dumps, classifies each request by its user-agent string, an
 
 ## Access log format
 
-The input CSV files are monthly exports of OpenCitations HTTP access logs. IP addresses are SHA-1 hashed for privacy. Each file has the following columns:
-
-| Column | Example |
-|---|---|
-| `hashed_ip` | `5aaa3bbdc584a2931a9cc04bac2d2125cb2511e5` |
-| `continent_name` | `Europe` |
-| `country_iso_code` | `ES` |
-| `country_name` | `Spain` |
-| `request_method` | `GET` |
-| `request_host` | `opencitations.net` |
-| `request_path` | `/index/api/v2/citation-count/doi:` |
-| `http_response_code` | `301` |
-| `user_agent` | `python-requests/2.32.5` |
-| `token` | `null` |
-| `date` | `2026-01-01T00:01:15Z` |
-| `referer` | `None` |
+The input CSV files are monthly exports of OpenCitations HTTP access logs. The script only needs two columns: `user_agent` and `date`.
 
 ## How classification works
 
