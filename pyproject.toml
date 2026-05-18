@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Monitor AI and generic bot activity in OpenCitations web access logs"
 requires-python = ">=3.13"
 dependencies = [
+    "matplotlib>=3.10.3",
     "polars>=1.40.1",
 ]
 
@@ -15,6 +16,7 @@ dev = [
 
 [tool.pyright]
 typeCheckingMode = "strict"
+reportUnknownMemberType = false
 
 [tool.ruff]
 line-length = 120
@@ -22,3 +24,7 @@ line-length = 120
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = ["D"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

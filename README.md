@@ -34,14 +34,15 @@ Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/).
 
 ```
 uv sync
-uv run python analyze_traffic.py
+uv run python -m oc_botwatch.classify
+uv run python -m oc_botwatch.visualize
 ```
 
-Processing is parallelized internally by Polars.
+## Output
 
-Output goes to `daily_traffic.csv` in the project root.
+Both files are in the `output/` directory.
 
-## Output format
+`output/daily_traffic.csv`: per-day request counts by category.
 
 ```csv
 date,human,generic_bot,ai_bot
@@ -49,3 +50,7 @@ date,human,generic_bot,ai_bot
 2026-01-02,148877,27650,4455
 ...
 ```
+
+`output/daily_traffic.png`: stacked area chart of daily traffic.
+
+![Daily traffic](output/daily_traffic.png)

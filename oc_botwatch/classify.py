@@ -1,4 +1,3 @@
-# pyright: reportUnknownMemberType=false
 import json
 import logging
 import re
@@ -8,7 +7,7 @@ import polars as pl
 
 logger = logging.getLogger(__name__)
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 DATE_LEN = 10
 
 CSV_FILES = [
@@ -34,12 +33,11 @@ def _build_generic_bot_pattern() -> str:
         if "tags" in entry and "ai-crawler" in entry["tags"]:
             continue
         patterns.append(entry["pattern"])
-    for entry in counter:
-        patterns.append(entry["pattern"])
+    patterns.extend(entry["pattern"] for entry in counter)
     return "(?i)" + "|".join(patterns)
 
 
-def main() -> None:
+def classify_traffic() -> pl.DataFrame:
     ai_pat = _build_ai_pattern()
     generic_pat = _build_generic_bot_pattern()
 
@@ -67,18 +65,21 @@ def main() -> None:
         .collect(engine="streaming")
     )
 
-    result = (
+    return (
         daily.pivot(on="category", index="date", values="len")
         .fill_null(0)
         .sort("date")
         .select("date", "human", "generic_bot", "ai_bot")
     )
 
-    out_path = BASE_DIR / "daily_traffic.csv"
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO)
+    result = classify_traffic()
+    out_path = BASE_DIR / "output" / "daily_traffic.csv"
     result.write_csv(out_path)
     logger.info("Output: %s", out_path)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     main()
