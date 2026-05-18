@@ -32,6 +32,18 @@ User-agent strings are matched against two open databases (included as git submo
 
 A request is labeled `ai_bot` if its user-agent matches any entry in ai.robots.txt. Otherwise, if it matches crawler-user-agents (excluding entries already tagged as `ai-crawler`), it's labeled `generic_bot`. Everything else is `human`.
 
+### Why these two sources
+
+Because they have already been adopted in the literature. In particular, [Liu et al. (2025)](https://doi.org/10.1145/3730567.3732913) uses Dark Visitors, the upstream data source of ai.robots.txt, as its primary reference for compiling AI user agents, and relies on crawler-user-agents as a supplementary corpus of general-purpose bot signatures when testing the coverage of Cloudflare's bot-blocking feature.
+
+## Limitations
+
+User-agent string matching only detects bots that openly identify themselves. In practice, this means that the bot counts produced here are a lower bound on actual bot traffic, and the human counts are an upper bound. The classification remains useful for tracking relative trends over time, since the same lists applied consistently yield comparable proportions across periods.
+
+## References
+
+Liu, E., Luo, E., Shan, S., Voelker, G. M., Zhao, B. Y., & Savage, S. (2025). Somesite I Used To Crawl: Awareness, Agency and Efficacy in Protecting Content Creators From AI Crawlers. In *Proceedings of the 2025 ACM Internet Measurement Conference (IMC '25)*, 78–99. https://doi.org/10.1145/3730567.3732913
+
 ## Running
 
 Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/).
