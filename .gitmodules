@@ -1,0 +1,6 @@
+[submodule "ai-robots-txt"]
+	path = ai-robots-txt
+	url = https://github.com/ai-robots-txt/ai.robots.txt.git
+[submodule "crawler-user-agents"]
+	path = crawler-user-agents
+	url = https://github.com/monperrus/crawler-user-agents.git

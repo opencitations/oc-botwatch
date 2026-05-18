@@ -1,0 +1,24 @@
+[project]
+name = "oc-botwatch"
+version = "0.1.0"
+description = "Monitor AI and generic bot activity in OpenCitations web access logs"
+requires-python = ">=3.13"
+dependencies = [
+    "tqdm>=4.67.3",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.409",
+    "ruff>=0.15.13",
+]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D"]
