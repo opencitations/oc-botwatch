@@ -2,11 +2,11 @@
 
 Classifies traffic from [OpenCitations](https://opencitations.net) server access logs into three categories: human visitors, generic bots, and LLM bots
 
-It reads monthly CSV dumps, classifies each request by its user-agent string, and outputs a single `daily_traffic.csv` with per-day counts for each category.
+It reads monthly CSV dumps, classifies each request by its user-agent string and request volume, and outputs a single `daily_traffic.csv` with per-day counts for each category.
 
 ## Input data
 
-The script reads all `.csv` files from the `input/` directory. Each file is a monthly export of OpenCitations HTTP access logs; only the `user_agent` and `date` columns are used. The datasets are not yet publicly available but will be released in the future.
+The script reads all `.csv` files from the `input/` directory. Each file is a monthly export of OpenCitations HTTP access logs; the `user_agent`, `date`, and `hashed_ip` columns are used. The datasets are not yet publicly available but will be released in the future.
 
 ## How classification works
 
@@ -23,6 +23,8 @@ Two supplementary files cover bots present in our data that none of the three da
 - [`supplementary_bots.txt`](supplementary_bots.txt)
 - [`supplementary_llm_bots.txt`](supplementary_llm_bots.txt)
 
+After user-agent classification, any IP that generates more than 1,000 requests in a single day while classified as `human` is reclassified as `generic_bot`.
+
 Everything else is `human`.
 
 ### Why these three sources
@@ -33,7 +35,7 @@ COUNTER-Robots is the robot list maintained by [Project COUNTER](https://www.pro
 
 ## Limitations
 
-User-agent string matching only detects bots that openly identify themselves. In practice, this means that the bot counts produced here are a lower bound on actual bot traffic, and the human counts are an upper bound. The classification remains useful for tracking relative trends over time, since the same lists applied consistently yield comparable proportions across periods.
+User-agent string matching only detects bots that openly identify themselves; the per-IP threshold mitigates UA spoofing but may misclassify shared IPs (university proxies, corporate NATs) that legitimately exceed 1,000 daily requests. In practice, bot counts are a lower bound and human counts an upper bound. The classification remains useful for tracking relative trends over time, since the same rules applied consistently yield comparable proportions across periods.
 
 ## Running
 

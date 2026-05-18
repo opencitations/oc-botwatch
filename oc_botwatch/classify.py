@@ -14,6 +14,7 @@ _SKIP_LLM_NAMES: frozenset[str] = frozenset({"Spider", "Code"})
 
 _SUPPLEMENTARY_LLM_FILE = BASE_DIR / "supplementary_llm_bots.txt"
 _SUPPLEMENTARY_BOT_FILE = BASE_DIR / "supplementary_bots.txt"
+_IP_DAILY_THRESHOLD = 1000
 
 
 def _build_llm_pattern() -> str:
@@ -49,12 +50,12 @@ def classify_traffic() -> pl.DataFrame:
 
     frames = [
         pl.scan_csv(f, schema_overrides={"user_agent": pl.Utf8, "date": pl.Utf8}).select(
-            "date", "user_agent",
+            "hashed_ip", "date", "user_agent",
         )
         for f in sorted(INPUT_DIR.glob("*.csv"))
     ]
 
-    daily = (
+    ip_daily = (
         pl.concat(frames)
         .with_columns(pl.col("date").str.slice(0, 10).alias("date"))
         .filter(pl.col("date").str.contains(r"^\d{4}-\d{2}-\d{2}$"))
@@ -66,9 +67,22 @@ def classify_traffic() -> pl.DataFrame:
             .otherwise(pl.lit("human"))
             .alias("category"),
         )
-        .group_by("date", "category")
+        .group_by("hashed_ip", "date", "category")
         .len()
         .collect(engine="streaming")
+    )
+
+    daily = (
+        ip_daily.with_columns(
+            pl.when(
+                (pl.col("category") == "human") & (pl.col("len") > _IP_DAILY_THRESHOLD),
+            )
+            .then(pl.lit("generic_bot"))
+            .otherwise(pl.col("category"))
+            .alias("category"),
+        )
+        .group_by("date", "category")
+        .agg(pl.col("len").sum())
     )
 
     return (
