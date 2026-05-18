@@ -8,8 +8,6 @@ import polars as pl
 logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATE_LEN = 10
-
 INPUT_DIR = BASE_DIR / "input"
 
 
@@ -46,8 +44,8 @@ def classify_traffic() -> pl.DataFrame:
 
     daily = (
         pl.concat(frames)
-        .with_columns(pl.col("date").str.slice(0, DATE_LEN).alias("date"))
-        .filter(pl.col("date").str.len_chars() == DATE_LEN)
+        .with_columns(pl.col("date").str.slice(0, 10).alias("date"))
+        .filter(pl.col("date").str.contains(r"^\d{4}-\d{2}-\d{2}$"))
         .with_columns(
             pl.when(pl.col("user_agent").str.contains(ai_pat))
             .then(pl.lit("ai_bot"))
