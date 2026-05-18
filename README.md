@@ -1,12 +1,12 @@
 # oc-botwatch
 
-Classifies traffic from [OpenCitations](https://opencitations.net) server access logs into three categories: human visitors, generic bots (search engine crawlers and the like), and AI bots (LLM training crawlers, AI assistants, etc.).
+Classifies traffic from [OpenCitations](https://opencitations.net) server access logs into three categories: human visitors, generic bots, and LLM bots
 
 It reads monthly CSV dumps, classifies each request by its user-agent string, and outputs a single `daily_traffic.csv` with per-day counts for each category.
 
-## Access log format
+## Input data
 
-The input CSV files are monthly exports of OpenCitations HTTP access logs. The script only needs two columns: `user_agent` and `date`.
+The script reads all `.csv` files from the `input/` directory. Each file is a monthly export of OpenCitations HTTP access logs; only the `user_agent` and `date` columns are used. The datasets are not yet publicly available but will be released in the future.
 
 ## How classification works
 

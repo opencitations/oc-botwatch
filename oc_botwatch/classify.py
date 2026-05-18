@@ -10,11 +10,7 @@ logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATE_LEN = 10
 
-CSV_FILES = [
-    "oc-2026-01-hashed.csv/outputgennaiohash.csv",
-    "oc-2026-02-hashed.csv/oc-2026-02.csv",
-    "oc-2026-03-hashed.csv/oc-2026-03.csv",
-]
+INPUT_DIR = BASE_DIR / "input"
 
 
 def _build_ai_pattern() -> str:
@@ -42,10 +38,10 @@ def classify_traffic() -> pl.DataFrame:
     generic_pat = _build_generic_bot_pattern()
 
     frames = [
-        pl.scan_csv(BASE_DIR / f, schema_overrides={"user_agent": pl.Utf8, "date": pl.Utf8}).select(
+        pl.scan_csv(f, schema_overrides={"user_agent": pl.Utf8, "date": pl.Utf8}).select(
             "date", "user_agent",
         )
-        for f in CSV_FILES
+        for f in sorted(INPUT_DIR.glob("*.csv"))
     ]
 
     daily = (
