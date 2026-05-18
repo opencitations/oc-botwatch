@@ -46,6 +46,8 @@ date,human,generic_bot,llm_bot
 
 ![Daily traffic](output/daily_traffic.png)
 
+![Daily traffic share](output/daily_traffic_pct.png)
+
 Across the entire period, human traffic accounts for 16% to 24% of monthly requests. Generic bots dominate at 66% to 78%. LLM bots started at 2% in January and reached 11% in April, growing from 1.3M to 4.9M monthly requests (+267%).
 
 ## Limitations
