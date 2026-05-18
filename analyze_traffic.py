@@ -1,38 +1,30 @@
-import csv
+# pyright: reportUnknownMemberType=false
 import json
 import logging
-import os
 import re
-import sys
-from collections.abc import Callable
-from concurrent.futures import Future, ProcessPoolExecutor
 from pathlib import Path
 
-from tqdm import tqdm
+import polars as pl
 
 logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
-
 DATE_LEN = 10
-BATCH_SIZE = 50_000
 
 CSV_FILES = [
-    ("oc-2026-01-hashed.csv/outputgennaiohash.csv", "2026-01"),
-    ("oc-2026-02-hashed.csv/oc-2026-02.csv", "2026-02"),
-    ("oc-2026-03-hashed.csv/oc-2026-03.csv", "2026-03"),
+    "oc-2026-01-hashed.csv/outputgennaiohash.csv",
+    "oc-2026-02-hashed.csv/oc-2026-02.csv",
+    "oc-2026-03-hashed.csv/oc-2026-03.csv",
 ]
 
-_classify: Callable[[str], str]
 
-
-def _build_ai_regex() -> re.Pattern[str]:
+def _build_ai_pattern() -> str:
     with (BASE_DIR / "ai-robots-txt" / "robots.json").open() as f:
         data = json.load(f)
-    return re.compile("|".join(re.escape(name) for name in data), re.IGNORECASE)
+    return "(?i)" + "|".join(re.escape(name) for name in data)
 
 
-def _build_generic_bot_regex() -> re.Pattern[str]:
+def _build_generic_bot_pattern() -> str:
     with (BASE_DIR / "crawler-user-agents" / "crawler-user-agents.json").open() as f:
         data = json.load(f)
     patterns: list[str] = []
@@ -40,94 +32,46 @@ def _build_generic_bot_regex() -> re.Pattern[str]:
         if "tags" in entry and "ai-crawler" in entry["tags"]:
             continue
         patterns.append(entry["pattern"])
-    return re.compile("|".join(patterns), re.IGNORECASE)
-
-
-def build_classifier() -> Callable[[str], str]:
-    ai_re = _build_ai_regex()
-    generic_re = _build_generic_bot_regex()
-
-    def classify(ua: str) -> str:
-        if ai_re.search(ua):
-            return "ai_bot"
-        if generic_re.search(ua):
-            return "generic_bot"
-        return "human"
-
-    return classify
-
-
-def _init_worker() -> None:
-    global _classify  # noqa: PLW0603
-    _classify = build_classifier()
-
-
-def _process_batch(batch: list[tuple[str, str]]) -> dict[str, dict[str, int]]:
-    counts: dict[str, dict[str, int]] = {}
-    for day, ua in batch:
-        if day not in counts:
-            counts[day] = {"human": 0, "generic_bot": 0, "ai_bot": 0}
-        counts[day][_classify(ua)] += 1
-    return counts
-
-
-def _merge(target: dict[str, dict[str, int]], partial: dict[str, dict[str, int]]) -> None:
-    for day, cats in partial.items():
-        if day not in target:
-            target[day] = {"human": 0, "generic_bot": 0, "ai_bot": 0}
-        for cat, n in cats.items():
-            target[day][cat] += n
-
-
-def _count_lines(path: Path) -> int:
-    n = 0
-    with path.open("rb") as f:
-        for _ in f:
-            n += 1
-    return n - 1
+    return "(?i)" + "|".join(patterns)
 
 
 def main() -> None:
-    csv.field_size_limit(sys.maxsize)
-    workers = os.cpu_count() or 4
+    ai_pat = _build_ai_pattern()
+    generic_pat = _build_generic_bot_pattern()
 
-    daily: dict[str, dict[str, int]] = {}
+    frames = [
+        pl.scan_csv(BASE_DIR / f, schema_overrides={"user_agent": pl.Utf8, "date": pl.Utf8}).select(
+            "date", "user_agent",
+        )
+        for f in CSV_FILES
+    ]
 
-    with ProcessPoolExecutor(max_workers=workers, initializer=_init_worker) as pool:
-        for filename, _ in CSV_FILES:
-            filepath = BASE_DIR / filename
-            total = _count_lines(filepath)
-            futures: list[Future[dict[str, dict[str, int]]]] = []
+    daily = (
+        pl.concat(frames)
+        .with_columns(pl.col("date").str.slice(0, DATE_LEN).alias("date"))
+        .filter(pl.col("date").str.len_chars() == DATE_LEN)
+        .with_columns(
+            pl.when(pl.col("user_agent").str.contains(ai_pat))
+            .then(pl.lit("ai_bot"))
+            .when(pl.col("user_agent").str.contains(generic_pat))
+            .then(pl.lit("generic_bot"))
+            .otherwise(pl.lit("human"))
+            .alias("category"),
+        )
+        .group_by("date", "category")
+        .len()
+        .collect(engine="streaming")
+    )
 
-            with filepath.open(encoding="utf-8", errors="replace") as f:
-                reader = csv.reader(f)
-                header = next(reader)
-                col_date = header.index("date")
-                col_ua = header.index("user_agent")
-
-                batch: list[tuple[str, str]] = []
-                for row in tqdm(reader, total=total, desc=filename, unit=" rows", unit_scale=True):
-                    batch.append((row[col_date][:DATE_LEN], row[col_ua]))
-                    if len(batch) >= BATCH_SIZE:
-                        futures.append(pool.submit(_process_batch, batch))
-                        batch = []
-
-                if batch:
-                    futures.append(pool.submit(_process_batch, batch))
-
-            for fut in tqdm(futures, desc=f"{filename} [merge]", unit=" batch"):
-                _merge(daily, fut.result())
+    result = (
+        daily.pivot(on="category", index="date", values="len")
+        .fill_null(0)
+        .sort("date")
+        .select("date", "human", "generic_bot", "ai_bot")
+    )
 
     out_path = BASE_DIR / "daily_traffic.csv"
-    with out_path.open("w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["date", "human", "generic_bot", "ai_bot"])
-        for day in sorted(daily):
-            if len(day) != DATE_LEN:
-                continue
-            d = daily[day]
-            writer.writerow([day, d["human"], d["generic_bot"], d["ai_bot"]])
-
+    result.write_csv(out_path)
     logger.info("Output: %s", out_path)
 
 

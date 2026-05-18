@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Monitor AI and generic bot activity in OpenCitations web access logs"
 requires-python = ">=3.13"
 dependencies = [
-    "tqdm>=4.67.3",
+    "polars>=1.40.1",
 ]
 
 [dependency-groups]

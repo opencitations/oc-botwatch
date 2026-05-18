@@ -1,6 +1,7 @@
 oc-2026-01-hashed.csv/
 oc-2026-02-hashed.csv/
 oc-2026-03-hashed.csv/
+daily_traffic.csv
 .venv/
 .ruff_cache/
 __pycache__/

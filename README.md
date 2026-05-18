@@ -41,7 +41,7 @@ uv sync
 uv run python analyze_traffic.py
 ```
 
-Processing uses all available CPU cores.
+Processing is parallelized internally by Polars.
 
 Output goes to `daily_traffic.csv` in the project root.
 
