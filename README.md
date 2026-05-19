@@ -9,7 +9,9 @@ It reads monthly CSV dumps, looks at each request's user-agent, host, and path, 
 
 ## Input data
 
-The script reads all `.csv` files from the `input/` directory. Each file is a monthly export of OpenCitations HTTP access logs; the `date`, `user_agent`, `request_host`, `request_path`, `request_method`, and `http_response_code` columns are used. The datasets are not yet publicly available but will be released in the future.
+The script reads all `.csv` files from the `input/` directory. Each file is a monthly export of OpenCitations HTTP access logs; the `date`, `user_agent`, `request_host`, `request_path`, `request_method`, and `http_response_code` columns are used. 
+
+The source data is published on Zenodo ([doi:10.5281/zenodo.20289873](https://doi.org/10.5281/zenodo.20289873)). To reproduce the results, download and extract the archive into `input/`.
 
 ## How classification works
 
@@ -55,11 +57,15 @@ Human traffic sits between 32% and 45% of monthly requests. Generic bots take 48
 
 ![Daily traffic share by service](output/daily_traffic_by_service_pct.png)
 
+The bulk of LLM bot traffic targets the web front end. Over the four months, LLM crawlers make up 31.5% of web requests: nearly one in three. On the API and SPARQL endpoints they barely register, hovering around 4%, while generic bots dominate both (58.7% and 61.3%).
+
 | Service | Human | Generic bot | LLM bot |
 |---|---|---|---|
 | web | 56.0% | 12.5% | 31.5% |
 | api | 37.4% | 58.7% | 3.9% |
 | sparql | 34.6% | 61.3% | 4.1% |
+
+The growth from 2% to 13% is therefore almost entirely on the browsable site. LLM crawlers are not querying the REST API or the SPARQL endpoint in any significant volume.
 
 ## Limitations
 
