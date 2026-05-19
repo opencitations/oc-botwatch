@@ -1,7 +1,7 @@
 [project]
 name = "oc-botwatch"
 version = "0.1.0"
-description = "Classifies traffic from OpenCitations server access logs into three categories: human visitors, generic bots, and LLM bots"
+description = "Classifies traffic from OpenCitations server access logs into three categories (human visitors, generic bots, LLM bots) and three services (web, API, SPARQL)"
 requires-python = ">=3.10"
 dependencies = [
     "matplotlib>=3.10.3",

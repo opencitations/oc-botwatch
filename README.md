@@ -9,7 +9,7 @@ It reads monthly CSV dumps, looks at each request's user-agent, host, and path, 
 
 ## Input data
 
-The script reads all `.csv` files from the `input/` directory. Each file is a monthly export of OpenCitations HTTP access logs; the `date`, `user_agent`, `request_host`, and `request_path` columns are used. The datasets are not yet publicly available but will be released in the future.
+The script reads all `.csv` files from the `input/` directory. Each file is a monthly export of OpenCitations HTTP access logs; the `date`, `user_agent`, `request_host`, `request_path`, `request_method`, and `http_response_code` columns are used. The datasets are not yet publicly available but will be released in the future.
 
 ## How classification works
 
@@ -33,54 +33,33 @@ COUNTER-Robots is the robot list maintained by [Project COUNTER](https://www.pro
 
 ## Service classification
 
-Each request is also assigned to one of three services, based on `request_host` and `request_path`:
+Each request is also assigned to one of three services, based on `request_host`, `request_path`, and `request_method`. Redirects (3xx) are dropped from the dataset entirely: they come from deprecated API paths (e.g. `/index/coci/api/v1/`) or from the main domain bouncing requests to a subdomain, and the actual response appears as a separate log entry on the destination host.
 
-- `sparql`: host `sparql.opencitations.net`, or any path matching `/sparql` (covers `opencitations.net/sparql`, `opencitations.net/index/sparql`, `opencitations.net/index/coci/sparql`).
-- `api`: host `api.opencitations.net`, or any path under a versioned API route: `/index/v\d+/`, `/index/api/v\d+/`, `/index/coci/api/v\d+/`, `/meta/v\d+/`, `/meta/api/v\d+/`. The INDEX, COCI, and META REST endpoints are grouped together under `api`.
-- `web`: everything else. This bucket holds the main site (`opencitations.net/`, `/about`, `/governance`, ...) along with smaller subdomains such as `ldd.opencitations.net`, `search.opencitations.net`, `download.opencitations.net`, `statistics.opencitations.net`, `oci.opencitations.net`, and `sparontologies.net`.
-
-The SPARQL rule is evaluated before the API one because `opencitations.net/index/sparql` would otherwise be captured by the versioned API pattern.
+- `sparql`: any non-redirect request whose path matches `/sparql`, or a request to `sparql.opencitations.net` that carries a `?query=` parameter or uses the POST method.
+- `api`: any non-redirect request whose path matches a versioned API route with at least one segment after the version number: `/index/v\d+/…`, `/index/api/v\d+/…`, `/meta/v\d+/…`, `/meta/api/v\d+/…`. Bare version roots (`/index/v1`, `/meta/v1`) and non-API paths on `api.opencitations.net` (`/robots.txt`, `/`) fall through to `web`. The INDEX and META REST endpoints are grouped together under `api`.
+- `web`: everything else. The main site (`opencitations.net/`, `/about`, `/governance`, ...), subdomains such as `ldd.opencitations.net`, `search.opencitations.net`, `download.opencitations.net`, `statistics.opencitations.net`, `oci.opencitations.net`, and `sparontologies.net`, and non-service requests on `sparql.opencitations.net` and `api.opencitations.net` (static assets, robots.txt, UI pages).
 
 ## Findings
 
 The dataset covers January through April 2026. The `output/` directory contains `daily_traffic.csv` (per-day counts by category), `daily_traffic_by_service.csv` (per-day counts by category and service), and four stacked area charts.
 
-```csv
-date,human,generic_bot,llm_bot
-2026-01-01,353575,1831164,33985
-2026-01-02,201801,1431714,49966
-...
-```
-
 ![Daily traffic](output/daily_traffic.png)
 
 ![Daily traffic share](output/daily_traffic_pct.png)
 
-Across the entire period, human traffic accounts for 26% to 31% of monthly requests. Generic bots range from 59% to 67%. LLM bots started at 2% in January and reached 11% in April, growing from 1.34M to 4.92M monthly requests (+267%).
+Human traffic sits between 32% and 45% of monthly requests. Generic bots take 48% to 55%. LLM bots go from 2% in January to 13% in April, or 1.06M to 4.09M monthly requests (+287%).
 
 ### By service
-
-```csv
-date,category,service,count
-2026-01-01,generic_bot,api,1716034
-2026-01-01,human,api,338129
-2026-01-01,llm_bot,api,19233
-...
-```
 
 ![Daily traffic by service](output/daily_traffic_by_service.png)
 
 ![Daily traffic share by service](output/daily_traffic_by_service_pct.png)
 
-Across the four months, the REST API takes 87.3% of all traffic (159.1M requests), the web bucket 9.8% (17.9M), and SPARQL 2.8% (5.15M). The audience mix differs sharply by service:
-
 | Service | Human | Generic bot | LLM bot |
 |---|---|---|---|
-| web | 49.9% | 16.6% | 33.6% |
-| api | 28.4% | 68.5% | 3.1% |
-| sparql | 1.9% | 97.7% | 0.3% |
-
-LLM bots concentrate on web pages, where they account for one third of the traffic; they barely touch SPARQL. The API is the workhorse for generic crawlers. SPARQL has a near-flat daily rate dominated by a small set of generic bots, suggesting scheduled scrapers rather than interactive querying.
+| web | 56.0% | 12.5% | 31.5% |
+| api | 37.4% | 58.7% | 3.9% |
+| sparql | 34.6% | 61.3% | 4.1% |
 
 ## Limitations
 

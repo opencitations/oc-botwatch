@@ -15,26 +15,25 @@ CHROME_UA = (
 )
 
 EXPECTED_DAILY_TRAFFIC = [
-    {"date": "2026-01-15", "human": 6, "generic_bot": 4, "llm_bot": 2},
+    {"date": "2026-01-15", "human": 7, "generic_bot": 3, "llm_bot": 1},
     {"date": "2026-01-16", "human": 1, "generic_bot": 1, "llm_bot": 0},
 ]
 
 EXPECTED_BY_SERVICE = [
-    {"date": "2026-01-15", "category": "generic_bot", "service": "api", "count": 2},
-    {"date": "2026-01-15", "category": "human", "service": "api", "count": 2},
+    {"date": "2026-01-15", "category": "human", "service": "api", "count": 1},
     {"date": "2026-01-15", "category": "generic_bot", "service": "sparql", "count": 1},
-    {"date": "2026-01-15", "category": "llm_bot", "service": "sparql", "count": 2},
-    {"date": "2026-01-15", "category": "generic_bot", "service": "web", "count": 1},
-    {"date": "2026-01-15", "category": "human", "service": "web", "count": 4},
+    {"date": "2026-01-15", "category": "llm_bot", "service": "sparql", "count": 1},
+    {"date": "2026-01-15", "category": "generic_bot", "service": "web", "count": 2},
+    {"date": "2026-01-15", "category": "human", "service": "web", "count": 6},
     {"date": "2026-01-16", "category": "generic_bot", "service": "api", "count": 1},
     {"date": "2026-01-16", "category": "human", "service": "web", "count": 1},
 ]
 
 
-def _write_csv(path: Path, rows: list[tuple[str, str, str, str]]) -> None:
+def _write_csv(path: Path, rows: list[tuple[str, str, str, str, str, int]]) -> None:
     with path.open("w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["date", "user_agent", "request_host", "request_path"])
+        writer.writerow(["date", "user_agent", "request_host", "request_path", "request_method", "http_response_code"])
         writer.writerows(rows)
 
 
@@ -43,26 +42,30 @@ def _write_input_csvs(input_dir: Path) -> None:
     _write_csv(
         input_dir / "2026-01-a.csv",
         [
-            ("2026-01-15T08:00:00", GPTBOT_UA, "sparql.opencitations.net", "/index/v2/anything"),
-            ("2026-01-15T09:00:00", CLAUDEBOT_UA, "opencitations.net", "/sparql?query=SELECT"),
-            ("2026-01-15T10:00:00", GOOGLEBOT_UA, "opencitations.net", "/index/sparql"),
-            ("2026-01-15T11:00:00", CHROME_UA, "api.opencitations.net", "/index/v2/citations/doi:1"),
-            ("2026-01-15T12:00:00", CHROME_UA, "opencitations.net", "/index/api/v1/citations/doi:2"),
-            ("2026-01-15T13:00:00", NODE_UA, "opencitations.net", "/meta/v1/metadata/doi:3"),
-            ("2026-01-15T14:00:00", NODE_UA, "opencitations.net", "/index/coci/api/v1/citations/doi:4"),
-            ("2026-01-15T15:00:00", NODE_UA, "opencitations.net", "/meta/api/"),
-            ("2026-01-15T16:00:00", CHROME_UA, "opencitations.net", "/about"),
-            ("2026-01-15T17:00:00", CHROME_UA, "ldd.opencitations.net", "/meta/br/123"),
-            ("2026-01-15T18:00:00", CHROME_UA, "search.opencitations.net", "/"),
-            ("2026-01-15T19:00:00", CHROME_UA, "www.sparontologies.net", "/"),
-            ("not-a-date", CHROME_UA, "opencitations.net", "/"),
+            ("2026-01-15T08:00:00", GPTBOT_UA, "sparql.opencitations.net", "/meta?query=SELECT", "GET", 200),
+            ("2026-01-15T09:00:00", CLAUDEBOT_UA, "opencitations.net", "/sparql?query=SELECT", "GET", 301),
+            ("2026-01-15T10:00:00", GOOGLEBOT_UA, "opencitations.net", "/index/sparql", "GET", 301),
+            ("2026-01-15T11:00:00", CHROME_UA, "api.opencitations.net", "/index/v2/citations/doi:1", "GET", 200),
+            ("2026-01-15T12:00:00", CHROME_UA, "opencitations.net", "/index/api/v1/citations/doi:2", "GET", 301),
+            ("2026-01-15T13:00:00", NODE_UA, "opencitations.net", "/meta/v1/metadata/doi:3", "GET", 301),
+            ("2026-01-15T14:00:00", NODE_UA, "opencitations.net", "/index/coci/api/v1/citations/doi:4", "GET", 308),
+            ("2026-01-15T15:00:00", NODE_UA, "opencitations.net", "/meta/api/", "GET", 200),
+            ("2026-01-15T16:00:00", CHROME_UA, "opencitations.net", "/about", "GET", 200),
+            ("2026-01-15T17:00:00", CHROME_UA, "ldd.opencitations.net", "/meta/br/123", "GET", 200),
+            ("2026-01-15T18:00:00", CHROME_UA, "search.opencitations.net", "/", "GET", 200),
+            ("2026-01-15T19:00:00", CHROME_UA, "www.sparontologies.net", "/", "GET", 200),
+            ("not-a-date", CHROME_UA, "opencitations.net", "/", "GET", 200),
+            ("2026-01-15T20:00:00", GOOGLEBOT_UA, "sparql.opencitations.net", "/meta", "POST", 200),
+            ("2026-01-15T21:00:00", CHROME_UA, "sparql.opencitations.net", "/robots.txt", "GET", 200),
+            ("2026-01-15T22:00:00", GOOGLEBOT_UA, "api.opencitations.net", "/robots.txt", "GET", 404),
+            ("2026-01-15T23:00:00", CHROME_UA, "api.opencitations.net", "/index/v1", "GET", 200),
         ],
     )
     _write_csv(
         input_dir / "2026-01-b.csv",
         [
-            ("2026-01-16T11:00:00", NODE_UA, "opencitations.net", "/index/v2/citations/doi:5"),
-            ("2026-01-16T12:00:00", CHROME_UA, "opencitations.net", "/"),
+            ("2026-01-16T11:00:00", NODE_UA, "api.opencitations.net", "/index/v2/citations/doi:5", "GET", 200),
+            ("2026-01-16T12:00:00", CHROME_UA, "opencitations.net", "/", "GET", 200),
         ],
     )
 

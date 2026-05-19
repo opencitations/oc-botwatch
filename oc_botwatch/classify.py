@@ -16,9 +16,10 @@ _SKIP_LLM_NAMES: frozenset[str] = frozenset({"Spider", "Code"})
 _SUPPLEMENTARY_BOT_FILE = BASE_DIR / "supplementary_bots.txt"
 
 _SPARQL_HOST = "sparql.opencitations.net"
-_API_HOST = "api.opencitations.net"
 _SPARQL_PATH_RE = r"/sparql(/|$|\?)"
-_API_VERSIONED_PATH_RE = r"^/(index(/api|/coci/api)?|meta(/api)?)/v\d+(/|$)"
+_SPARQL_QUERY_RE = r"\?query="
+_API_VERSIONED_PATH_RE = r"^/(index(/api)?|meta(/api)?)/v\d+/.+"
+_REDIRECT_CODES: frozenset[str] = frozenset({"301", "302", "303", "307", "308"})
 
 
 def _build_llm_pattern() -> str:
@@ -47,14 +48,15 @@ def _build_generic_bot_pattern() -> str:
     return "(?i)" + "|".join(patterns)
 
 
-def _classify_service(host: pl.Expr, path: pl.Expr) -> pl.Expr:
+def _classify_service(host: pl.Expr, path: pl.Expr, method: pl.Expr) -> pl.Expr:
     return (
-        pl.when(host == _SPARQL_HOST)
+        pl.when(path.str.contains(_SPARQL_PATH_RE))
         .then(pl.lit("sparql"))
-        .when(path.str.contains(_SPARQL_PATH_RE))
+        .when(
+            (host == _SPARQL_HOST)
+            & (path.str.contains(_SPARQL_QUERY_RE) | (method == "POST"))
+        )
         .then(pl.lit("sparql"))
-        .when(host == _API_HOST)
-        .then(pl.lit("api"))
         .when(path.str.contains(_API_VERSIONED_PATH_RE))
         .then(pl.lit("api"))
         .otherwise(pl.lit("web"))
@@ -73,8 +75,10 @@ def classify_traffic(input_dir: Path = INPUT_DIR) -> pl.DataFrame:
                 "date": pl.Utf8,
                 "request_host": pl.Utf8,
                 "request_path": pl.Utf8,
+                "request_method": pl.Utf8,
+                "http_response_code": pl.Utf8,
             },
-        ).select("date", "user_agent", "request_host", "request_path")
+        ).select("date", "user_agent", "request_host", "request_path", "request_method", "http_response_code")
         for f in sorted(input_dir.glob("*.csv"))
     ]
 
@@ -82,6 +86,7 @@ def classify_traffic(input_dir: Path = INPUT_DIR) -> pl.DataFrame:
         pl.concat(frames)
         .with_columns(pl.col("date").str.slice(0, 10).alias("date"))
         .filter(pl.col("date").str.contains(r"^\d{4}-\d{2}-\d{2}$"))
+        .filter(~pl.col("http_response_code").is_in(_REDIRECT_CODES))
         .with_columns(
             pl.when(pl.col("user_agent").str.contains(llm_pat))
             .then(pl.lit("llm_bot"))
@@ -89,7 +94,7 @@ def classify_traffic(input_dir: Path = INPUT_DIR) -> pl.DataFrame:
             .then(pl.lit("generic_bot"))
             .otherwise(pl.lit("human"))
             .alias("category"),
-            _classify_service(pl.col("request_host"), pl.col("request_path")).alias("service"),
+            _classify_service(pl.col("request_host"), pl.col("request_path"), pl.col("request_method")).alias("service"),
         )
         .group_by("date", "category", "service")
         .len()
