@@ -1,7 +1,14 @@
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+
+SPDX-License-Identifier: ISC
+-->
+
 # oc-botwatch
 
-[![tests](https://github.com/arcangelo7/oc-botwatch/actions/workflows/test.yml/badge.svg)](https://github.com/arcangelo7/oc-botwatch/actions/workflows/test.yml)
-[![coverage](https://arcangelo7.github.io/oc-botwatch/coverage-badge.svg)](https://arcangelo7.github.io/oc-botwatch/coverage/)
+[![tests](https://github.com/opencitations/oc-botwatch/actions/workflows/test.yml/badge.svg)](https://github.com/opencitations/oc-botwatch/actions/workflows/test.yml)
+[![coverage](https://opencitations.github.io/oc-botwatch/coverage-badge.svg)](https://opencitations.github.io/oc-botwatch/coverage/)
+[![REUSE status](https://api.reuse.software/badge/github.com/opencitations/oc-botwatch)](https://api.reuse.software/info/github.com/opencitations/oc-botwatch)
 
 Classifies traffic from [OpenCitations](https://opencitations.net) server access logs into three categories (human visitors, generic bots, LLM bots) and three services (web, API, SPARQL).
 

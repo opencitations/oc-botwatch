@@ -1,0 +1,15 @@
+version = 1
+
+[[annotations]]
+path = [
+    ".python-version",
+    "output/**",
+    "uv.lock",
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "pyproject.toml"
+SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
+SPDX-License-Identifier = "ISC"

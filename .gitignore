@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 NONE
+#
+# SPDX-License-Identifier: CC0-1.0
+
 input/
 .venv/
 .ruff_cache/
@@ -6,4 +10,3 @@ __pycache__/
 htmlcov/
 coverage.xml
 .coverage
-zenodo_upload.yaml

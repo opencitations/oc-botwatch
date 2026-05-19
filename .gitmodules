@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 NONE
+#
+# SPDX-License-Identifier: CC0-1.0
+
 [submodule "ai-robots-txt"]
 	path = ai-robots-txt
 	url = https://github.com/ai-robots-txt/ai.robots.txt.git
